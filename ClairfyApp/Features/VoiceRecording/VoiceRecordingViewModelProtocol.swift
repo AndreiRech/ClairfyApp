@@ -1,0 +1,22 @@
+//
+//  VoiceRecordingViewModelProtocol.swift
+//  ClairfyApp
+//
+//  Created by Andrei Rech on 09/10/25.
+//
+
+import Foundation
+
+protocol VoiceRecordingViewModelProtocol {
+    var recordingState: RecordingState { get set }
+    var audioSamples: [Float] { get set }
+    var recordingTime: TimeInterval { get set }
+    var hasMicrophonePermission: Bool { get set }
+    var currentAudioLevel: CGFloat { get set }
+    
+    func startRecordingTapped()
+    func pauseRecordingTapped()
+    func resumeRecordingTapped()
+    func stopRecordingTapped()
+    func deleteRecordingTapped()
+}
