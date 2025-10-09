@@ -11,7 +11,7 @@ import AVFoundation
 
 @Observable
 class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
-    var recordingState: RecordingState = .idle
+    var recordingState: RecordingState = .recording
     var audioSamples: [Float] = []
     var recordingTime: TimeInterval = 0
     var hasMicrophonePermission = false
@@ -23,6 +23,7 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     init(repository: VoiceRecordingRepositoryProtocol) {
         self.repository = repository
         checkMicrophonePermission()
+        startRecordingTapped()
     }
     
     func startRecordingTapped() {

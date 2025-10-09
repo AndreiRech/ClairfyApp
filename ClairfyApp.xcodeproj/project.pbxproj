@@ -10,9 +10,22 @@
 		4DD762B52E96E36A00CE058E /* ClairfyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClairfyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		699320582E98394500173D96 /* Exceptions for "ClairfyApp" folder in "ClairfyApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4DD762B42E96E36A00CE058E /* ClairfyApp */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4DD762B72E96E36A00CE058E /* ClairfyApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				699320582E98394500173D96 /* Exceptions for "ClairfyApp" folder in "ClairfyApp" target */,
+			);
 			path = ClairfyApp;
 			sourceTree = "<group>";
 		};
@@ -253,9 +266,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7K37UYKQLZ;
+				DEVELOPMENT_TEAM = SSL59624G4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ClairfyApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Clairfy;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "O aplicativo utiliza o microfone para gravar mensagens de áudio e permitir que o usuário as reproduza e realize resumos do áudio gravado.";
@@ -292,9 +306,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7K37UYKQLZ;
+				DEVELOPMENT_TEAM = SSL59624G4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ClairfyApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Clairfy;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "O aplicativo utiliza o microfone para gravar mensagens de áudio e permitir que o usuário as reproduza e realize resumos do áudio gravado.";
