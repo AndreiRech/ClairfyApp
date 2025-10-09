@@ -64,7 +64,9 @@ struct ConsultationListView: View {
                 VoiceRecordingView(viewModel: VoiceRecordingViewModel(
                     repository: VoiceRecordingRepository(
                         audioService: AudioService(),
-                        recordingService: RecordingService())))
+                        recordingService: RecordingService(),
+                        consultationSerevice: ConsultationService()
+                    )))
             }
         }
         .onAppear {
