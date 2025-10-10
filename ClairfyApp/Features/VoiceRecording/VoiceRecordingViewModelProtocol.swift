@@ -18,6 +18,8 @@ protocol VoiceRecordingViewModelProtocol {
     var showDeleteConfirmation: Bool { get set }
     var showTooShortAlert: Bool { get set }
     
+    var onDismiss: () -> Void { get }
+    
     func startRecordingTapped()
     func pauseRecordingTapped()
     func resumeRecordingTapped()

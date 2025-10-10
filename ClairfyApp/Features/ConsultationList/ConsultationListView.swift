@@ -16,7 +16,7 @@ struct ConsultationListView: View {
                 if viewModel.consultations.isEmpty {
                     Spacer()
                     
-                    EmptyState()
+                    EmptyState(icon: "microphone.fill", title: "Ainda não há áudios.", description: "Construa o histórico do paciente desde a primeira conversa.")
                 } else {
                     List(viewModel.filteredConsultations) { consultation in
                         ListComponent(title: consultation.title, date: consultation.date)
@@ -58,13 +58,25 @@ struct ConsultationListView: View {
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Consultas")
             .navigationDestination(item: $viewModel.selectedConsultation) { consultation in
-                // navegar para tela de visualizar consulta
+                AnalysisView(viewModel: AnalysisViewModel(
+                    consultation: consultation,
+                    repository: AnalysisRepository(
+                        consultationService: ConsultationService(),
+                        aiService: AIService()
+                    )
+                ))
             }
             .navigationDestination(isPresented: $viewModel.shouldRecordAudio) {
                 VoiceRecordingView(viewModel: VoiceRecordingViewModel(
                     repository: VoiceRecordingRepository(
                         audioService: AudioService(),
-                        recordingService: RecordingService(), consultationSerevice: ConsultationService())))
+                        recordingService: RecordingService(),
+                        consultationSerevice: ConsultationService()
+                    ),
+                    onDismiss: {
+                        viewModel.fetchConsultations()
+                    }
+                ))
             }
         }
         .onAppear {

@@ -75,6 +75,7 @@ struct VoiceRecordingView: View {
         .sheet(isPresented: $viewModel.shouldNavigate) {
             RenameSheet(title: $viewModel.titleConsultation) {
                 viewModel.createConsultation()
+                viewModel.onDismiss()
                 dismiss()
             }
         }

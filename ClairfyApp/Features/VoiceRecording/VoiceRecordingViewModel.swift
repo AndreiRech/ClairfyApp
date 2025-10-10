@@ -25,8 +25,12 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     var showTooShortAlert: Bool = false
     var showDeleteConfirmation: Bool = false
     
-    init(repository: VoiceRecordingRepositoryProtocol) {
+    var onDismiss: () -> Void
+    
+    init(repository: VoiceRecordingRepositoryProtocol, onDismiss: @escaping () -> Void) {
         self.repository = repository
+        self.onDismiss = onDismiss
+        
         checkMicrophonePermission()
         startRecordingTapped()
     }

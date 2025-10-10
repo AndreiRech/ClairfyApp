@@ -14,10 +14,10 @@ protocol VoiceRecordingRepositoryProtocol {
     var averagePower: Float { get }
     
     func createAudio(with audio: AudioFile) throws
+    func createConsultation(with consultation: Consultation) throws
     
     func startRecording()
     func finishRecording()
     func pauseRecording()
     func resumeRecording()
-    func createConsultation(with consultation: Consultation) throws
 }

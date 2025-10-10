@@ -13,6 +13,17 @@ struct ClairfyApp: App {
     @AppStorage("onboarding") var isOnboardingDone: Bool = false
     @State private var isSplashScreenActive = true
     
+    init() {
+        SupabaseService.shared.skipAuthorizationHeader = true
+        
+        // DESENVOLVIMENTO: Descomente para resetar o device ID e contornar limite de quota
+        // SupabaseManager.shared.clearDeviceId()
+        // print("Device ID resetado - novo ID será gerado")
+        
+        print("skipAuthorizationHeader: \(SupabaseService.shared.skipAuthorizationHeader)")
+        print("Device ID: \(SupabaseService.shared.getOrCreateDeviceId())")
+    }
+    
     var body: some Scene {
         WindowGroup {
             if !isSplashScreenActive {

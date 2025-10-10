@@ -8,19 +8,23 @@
 import SwiftUI
 
 struct EmptyState: View {
+    let icon: String
+    let title: String
+    let description: String
+    
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
-            Image(systemName: "microphone.fill")
+            Image(systemName: icon)
                 .font(.title)
                 .foregroundStyle(Color(.label))
             
-            Text("Ainda não há áudios.")
+            Text(title)
                 .font(.title2)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color(.label))
             
-            Text("Construa o histórico do paciente desde a primeira conversa.")
+            Text(description)
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color(.label))
