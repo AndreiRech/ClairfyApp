@@ -58,9 +58,9 @@ public final class AIService: AIServiceProtocol {
         text: String,
         promptType: String,
         category: String? = nil,
-        model: String = "gpt-4o-mini",
-        temperature: Double = 0.1,
-        maxOutputTokens: Int? = 800
+        model: String = "gpt-5-mini",
+        temperature: Double = 0.2,
+        maxOutputTokens: Int? = 2000
     ) async throws -> String {
         var request = URLRequest(url: functionURL)
         request.httpMethod = "POST"
