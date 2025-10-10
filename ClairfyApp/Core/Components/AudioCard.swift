@@ -17,34 +17,47 @@ struct AudioCard: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack(alignment: .center, spacing: 8) {
+                
                 Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 50, height: 50)
                     .foregroundColor(Color(.clairBlue))
                 
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.body)
                         .foregroundColor(.primary)
                     
-                    Text(description)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
+                    HStack{
+                        Text(description)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Text(totalTime)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                
-                Spacer()
-                
-                Text(totalTime)
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
             }
-            
-            // audioForm
-            // .frame(height: 50)
         }
         .padding(24)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
         .background(Color(.tertiarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
     }
+}
+
+#Preview("AudioCard Preview") {
+    let sampleAudio = AudioFile(audioPath: "/tmp/fake.m4a")
+    return AudioCard(
+        title: "Consulta de Rotina",
+        description: "09/10/2025 · 14:32",
+        totalTime: "12:45",
+        isPlaying: false,
+        audio: sampleAudio
+    )
+    .padding()
+    .background(Color(.systemBackground))
 }

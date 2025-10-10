@@ -107,7 +107,6 @@ struct AnalysisView: View {
                     }
                     .padding(.bottom, 20)
                 }
-                
                 Button {
                     // Se já existe análise, mostra confirmação
                     if viewModel.consultation.transcription != nil {
@@ -122,22 +121,24 @@ struct AnalysisView: View {
                         }
                     }
                 } label: {
-                    let buttonText = viewModel.isLoading ? "Gerando..." : 
-                                   (viewModel.consultation.transcription != nil ? "Gerar Nova Análise" : "Gerar Análise")
+                    let buttonText = viewModel.isLoading ? "Gerando..." :
+                    (viewModel.consultation.transcription != nil ? "Gerar nova análise" : "Gerar análise")
                     Text(buttonText)
-                        .font(.title)
-                        .foregroundColor(viewModel.isLoading ? .gray : .clairBlue)
-                        .padding(.vertical, 10)
-                        .glassEffect()
+                        .font(Font.title.bold())
+                        .foregroundStyle(Color(.tertiarySystemBackground))
+                        .padding()
                 }
                 .disabled(viewModel.isLoading)
-                .padding(.bottom, 10)
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: 54)
+                .glassEffect(.regular.tint(.clairBlue).interactive())
             }
+            
             
             // Loading overlay
             if viewModel.isLoading {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
+//                Color.black.opacity(0.4)
+//                    .ignoresSafeArea()
                 
                 VStack(spacing: 20) {
                     ProgressView()
@@ -154,7 +155,7 @@ struct AnalysisView: View {
                 }
                 .padding(40)
                 .background(Color(.systemGray6).opacity(0.95))
-                .cornerRadius(20)
+                .cornerRadius(34)
             }
         }
         .padding(.horizontal, 16)
@@ -168,7 +169,7 @@ struct AnalysisView: View {
         } message: {
             Text(viewModel.errorMessage ?? "Erro desconhecido")
         }
-        .alert("Gerar Nova Análise?", isPresented: $showRegenerateConfirmation) {
+        .alert("Gerar nova análise?", isPresented: $showRegenerateConfirmation) {
             Button("Cancelar", role: .cancel) { }
             Button("Gerar", role: .destructive) {
                 Task {
@@ -182,4 +183,41 @@ struct AnalysisView: View {
             Text("Esta ação irá substituir a análise atual. Deseja continuar?")
         }
     }
+    
 }
+
+#if DEBUG
+private final class AnalysisViewModelPreview: AnalysisViewModelProtocol {
+    var consultation: Consultation
+    var isLoading: Bool = false
+    var selectedSegment: Int = 0
+    var errorMessage: String? = nil
+
+    init(consultation: Consultation) {
+        self.consultation = consultation
+    }
+
+    func generateAnalysis() async { }
+}
+
+#Preview("Com análise") {
+    let transcription = Transcription(
+        transcription: nil,
+        summary: "Paciente apresenta sintomas leves de rinite alérgica. Recomendada continuidade do tratamento atual e acompanhamento em 30 dias.",
+        didactic: "Você tem uma irritação no nariz causada por alergia. Continue usando o spray e volte em 1 mês para avaliarmos.",
+        keyWords: "rinite, alergia, acompanhamento",
+        actionPoints: "1. Usar spray nasal diariamente\n\n2. Evitar poeira e mofo\n\n3. Retornar em 30 dias"
+    )
+
+    let audio = AudioFile(audioPath: "/tmp/fake.m4a")
+
+    let consultation = Consultation(
+        title: "Consulta de Rotina",
+        date: Date(),
+        audio: audio,
+        transcription: transcription
+    )
+
+    return AnalysisView(viewModel: AnalysisViewModelPreview(consultation: consultation))
+}
+#endif
