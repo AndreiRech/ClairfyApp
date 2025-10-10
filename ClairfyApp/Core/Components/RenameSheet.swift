@@ -43,7 +43,6 @@ struct RenameSheet: View {
             .navigationTitle("Novo Áudio")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Botão de fechar
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         dismiss()
@@ -54,10 +53,8 @@ struct RenameSheet: View {
                     }
                 }
                 
-                // Botão de confirmar
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        //ação do botão aqui
                         onSave()
                         dismiss()
                     } label: {
@@ -75,7 +72,3 @@ struct RenameSheet: View {
         }
     }
 }
-
-//#Preview {
-//    RenameSheet()
-//}
