@@ -11,8 +11,14 @@ public final class SupabaseManager {
         return URL(string: "https://uvyxqgnydymyvyaqycmp.supabase.co/functions/v1/chatgpt-proxy")!
     }
 
+    /// Supabase anon key - necessária para autenticação com Edge Functions
+    public var anonKey: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2eXhxZ255ZHlteXZ5YXF5Y21wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg0ODA3OTIsImV4cCI6MjA0NDA1Njc5Mn0.8oSm3_O8W5bSEJwsrNEpgIQ_uf99qeX4J1WDmV5S4xA"
+    
     /// Opcional: defina um x-app-secret para bypass de DEV (se configurado no server)
     public var appSecret: String? = nil
+    
+    /// DEBUG: Se true, NÃO envia o header Authorization (apenas apikey e x-device-id)
+    public var skipAuthorizationHeader: Bool = false
 
     // MARK: - Public config
     public func configure(edgeFunctionURL: URL, appSecret: String? = nil) {

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct VoiceRecordingView: View {
     @State var viewModel: VoiceRecordingViewModelProtocol
+    var onDismiss: (() -> Void)? = nil
     
     var body: some View {
         VStack(spacing: 32) {
@@ -71,5 +72,10 @@ struct VoiceRecordingView: View {
         .background(Color(.secondarySystemBackground))
         .navigationTitle("Gravação de Áudio")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
+            if shouldDismiss {
+                onDismiss?()
+            }
+        }
     }
 }

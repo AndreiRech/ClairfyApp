@@ -16,6 +16,7 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     var recordingTime: TimeInterval = 0
     var hasMicrophonePermission = false
     var currentAudioLevel: CGFloat = 0.0
+    var shouldDismiss = false
     
     private let repository: VoiceRecordingRepositoryProtocol
     private var timer: Timer?
@@ -87,10 +88,24 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
             return
         }
         
-        let newAudioFile = AudioFile(audioPath: url.absoluteString)
+        // Cria o AudioFile com o caminho do arquivo gravado
+        let newAudioFile = AudioFile(audioPath: url.path)
+        
+        // Cria uma Consultation com título baseado na data e hora
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd/MM/yyyy HH:mm"
+        let title = "Consulta \(dateFormatter.string(from: Date()))"
+        
+        let newConsultation = Consultation(
+            title: title,
+            date: Date(),
+            audio: newAudioFile
+        )
+        
         do {
-            try repository.createAudio(with: newAudioFile)
+            try repository.createConsultation(with: newConsultation)
             print("Recording saved successfully!")
+            shouldDismiss = true
         } catch {
             print("Failed to save recording: \(error.localizedDescription)")
         }

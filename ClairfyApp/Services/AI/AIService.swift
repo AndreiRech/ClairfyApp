@@ -5,24 +5,42 @@ public final class AIService: AIServiceProtocol {
     private var functionURL: URL { SupabaseManager.shared.edgeFunctionURL }
 
     public init(session: URLSession = .shared) {
-        self.session = session
+        // Cria uma session com timeout maior para análises longas
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 120  // 2 minutos por requisição
+        config.timeoutIntervalForResource = 300 // 5 minutos total
+        self.session = URLSession(configuration: config)
     }
 
     // MARK: - Public API
 
     public func transcribe(audioFileURL: URL, model: String = "whisper-1") async throws -> String {
+        print("🎙️ Starting transcription for file: \(audioFileURL.lastPathComponent)")
+        
         var request = URLRequest(url: functionURL)
         request.httpMethod = "POST"
 
-        // multipart
+        // Primeiro define os headers de autenticação
+        setAuthHeaders(on: &request)
+        
+        // Depois define o Content-Type (multipart)
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        setAuthHeaders(on: &request) // Authorization (futuro) ou x-device-id (atual)
-
         request.httpBody = try createTranscribeBody(boundary: boundary, fileURL: audioFileURL, model: model)
+        
+        print("📤 Sending request to: \(functionURL.absoluteString)")
 
         let (data, response) = try await session.data(for: request)
+        
+        print("📥 Response received for transcribe:")
+        if let httpResponse = response as? HTTPURLResponse {
+            print("   Status: \(httpResponse.statusCode)")
+        }
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("   Body: \(responseString.prefix(500))")
+        }
+        
         try handleHTTPErrorIfNeeded(response: response, data: data)
 
         // Whisper costuma retornar { "text": "..." } — mas tratamos fallback texto
@@ -83,16 +101,42 @@ public final class AIService: AIServiceProtocol {
     // MARK: - Private helpers
 
     private func setAuthHeaders(on request: inout URLRequest) {
-        // Fase atual: sem autenticação de usuário -> usa x-device-id
-        if let token = SupabaseManager.shared.getAccessToken(), !token.isEmpty {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // Sempre envia a anon key do Supabase
+        let anonKey = SupabaseManager.shared.anonKey
+        print("🔑 Setting anon key: \(anonKey.prefix(20))...")
+        
+        // Envia o header apikey (sempre necessário)
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        
+        // Se não estiver em modo debug, envia também o Authorization
+        if !SupabaseManager.shared.skipAuthorizationHeader {
+            // Supabase Edge Functions aceitam tanto Authorization quanto apikey
+            request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
+            
+            // Se houver token de usuário autenticado, sobrescreve o Authorization
+            if let userToken = SupabaseManager.shared.getAccessToken(), !userToken.isEmpty {
+                print("🔑 Overriding Authorization with user token")
+                request.setValue("Bearer \(userToken)", forHTTPHeaderField: "Authorization")
+            }
         } else {
-            let deviceId = SupabaseManager.shared.getOrCreateDeviceId()
-            request.setValue(deviceId, forHTTPHeaderField: "x-device-id")
+            print("⚠️ Skipping Authorization header (debug mode)")
         }
+        
+        // Envia device ID para identificação do dispositivo
+        let deviceId = SupabaseManager.shared.getOrCreateDeviceId()
+        print("📱 Setting x-device-id: \(deviceId)")
+        request.setValue(deviceId, forHTTPHeaderField: "x-device-id")
+        
         // Opcional (apenas se você configurar para DEV no server):
         if let appSecret = SupabaseManager.shared.appSecret, !appSecret.isEmpty {
+            print("🔐 Setting x-app-secret")
             request.setValue(appSecret, forHTTPHeaderField: "x-app-secret")
+        }
+        
+        // Debug: mostra todos os headers
+        print("📋 All headers being sent:")
+        request.allHTTPHeaderFields?.forEach { key, value in
+            print("   \(key): \(value.prefix(50))")
         }
     }
 
@@ -144,6 +188,19 @@ public final class AIService: AIServiceProtocol {
         guard let http = response as? HTTPURLResponse else { return }
         guard (200...299).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+            
+            // Detectar erro de quota exceeded
+            if http.statusCode == 402 || body.lowercased().contains("quota") {
+                print("❌ Quota exceeded detected")
+                throw AIServiceError.quotaExceeded
+            }
+            
+            // Detectar timeout
+            if http.statusCode == 504 || http.statusCode == 408 {
+                print("❌ Timeout detected")
+                throw AIServiceError.timeout
+            }
+            
             throw AIServiceError.serverError(status: http.statusCode, body: body)
         }
     }

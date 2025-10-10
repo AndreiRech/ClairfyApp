@@ -11,7 +11,7 @@ import SwiftData
 @Model
 final class Transcription: Identifiable {
     var id: UUID = UUID()
-    var transcription: String = ""
+    var transcription: String? = nil
     var summary: String = ""
     var didactic: String = ""
     var keyWords: String = ""
@@ -20,7 +20,7 @@ final class Transcription: Identifiable {
     var consultation: Consultation?
 
     
-    init(id: UUID = UUID(), transcription: String, summary: String, didactic: String, keyWords: String, actionPoints: String) {
+    init(id: UUID = UUID(), transcription: String? = nil, summary: String = "", didactic: String = "", keyWords: String = "", actionPoints: String = "") {
         self.id = id
         self.transcription = transcription
         self.summary = summary

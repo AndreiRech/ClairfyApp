@@ -58,7 +58,11 @@ struct ConsultationListView: View {
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Consultas")
             .navigationDestination(item: $viewModel.selectedConsultation) { consultation in
-                // navegar para tela de visualizar consulta
+                AnalysisView(viewModel: AnalysisViewModel(
+                    consultation: consultation,
+                    aiService: AIService(),
+                    repository: AnalysisRepository(consultationService: ConsultationService())
+                ))
             }
             .navigationDestination(isPresented: $viewModel.shouldRecordAudio) {
                 VoiceRecordingView(viewModel: VoiceRecordingViewModel(
@@ -66,7 +70,11 @@ struct ConsultationListView: View {
                         audioService: AudioService(),
                         recordingService: RecordingService(),
                         consultationSerevice: ConsultationService()
-                    )))
+                    )),
+                    onDismiss: {
+                        viewModel.shouldRecordAudio = false
+                        viewModel.fetchConsultations()
+                    })
             }
         }
         .onAppear {

@@ -13,6 +13,7 @@ protocol VoiceRecordingViewModelProtocol {
     var recordingTime: TimeInterval { get set }
     var hasMicrophonePermission: Bool { get set }
     var currentAudioLevel: CGFloat { get set }
+    var shouldDismiss: Bool { get set }
     
     func startRecordingTapped()
     func pauseRecordingTapped()
