@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct VoiceRecordingView: View {
-    
-    @State var viewModel: VoiceRecordingViewModel
+    @State var viewModel: VoiceRecordingViewModelProtocol
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         VStack(spacing: 32) {
@@ -72,22 +72,11 @@ struct VoiceRecordingView: View {
         .background(Color(.secondarySystemBackground))
         .navigationTitle("Gravação de Áudio")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Cancelar gravação?", isPresented: $viewModel.showDeleteConfirmation) {
-            Button("Deletar", role: .destructive) {
-                viewModel.confirmDeleteRecording()
+        .sheet(isPresented: $viewModel.shouldNavigate) {
+            RenameSheet(title: $viewModel.titleConsultation) {
+                viewModel.createConsultation()
+                dismiss()
             }
-            Button("Cancelar", role: .cancel) {
-                /// fecha automaticamente
-            }
-        } message: {
-            Text("Você tem certeza que deseja excluir este audio?")
-        }
-        .alert("Audio muito curto", isPresented: $viewModel.showTooShortAlert) {
-            Button("OK") {
-                /// fecha automaticamente
-            }
-        } message: {
-            Text("O audio tem que ter pelo menos 30 segundos.")
         }
     }
 }

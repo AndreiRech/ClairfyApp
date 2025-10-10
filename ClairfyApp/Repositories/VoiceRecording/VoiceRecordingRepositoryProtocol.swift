@@ -19,4 +19,5 @@ protocol VoiceRecordingRepositoryProtocol {
     func finishRecording()
     func pauseRecording()
     func resumeRecording()
+    func createConsultation(with consultation: Consultation) throws
 }
