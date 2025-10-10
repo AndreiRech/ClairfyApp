@@ -22,4 +22,5 @@ protocol VoiceRecordingViewModelProtocol {
     func stopRecordingTapped()
     func deleteRecordingTapped()
     func createConsultation()
+    func confirmDeleteRecording()
 }
