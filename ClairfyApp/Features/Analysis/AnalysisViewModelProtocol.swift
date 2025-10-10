@@ -12,6 +12,8 @@ protocol AnalysisViewModelProtocol {
     var isLoading: Bool { get set }
     var selectedSegment: Int { get set }
     var errorMessage: String? { get set }
+    var showRegenerateConfirmation: Bool { get set }
+    var showErrorAlert: Bool { get set }
     
     func generateAnalysis() async
 }

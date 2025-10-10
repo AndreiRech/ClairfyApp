@@ -13,10 +13,10 @@ struct ConsultationListView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                if viewModel.filteredConsultations.isEmpty {
+                if viewModel.consultations.isEmpty {
                     Spacer()
                     
-                    EmptyState()
+                    EmptyState(icon: "microphone.fill", title: "Ainda não há áudios.", description: "Construa o histórico do paciente desde a primeira conversa.")
                 } else {
                     List(viewModel.filteredConsultations) { consultation in
                         ListComponent(title: consultation.title, date: consultation.date)
@@ -60,8 +60,10 @@ struct ConsultationListView: View {
             .navigationDestination(item: $viewModel.selectedConsultation) { consultation in
                 AnalysisView(viewModel: AnalysisViewModel(
                     consultation: consultation,
-                    aiService: AIService(),
-                    repository: AnalysisRepository(consultationService: ConsultationService())
+                    repository: AnalysisRepository(
+                        consultationService: ConsultationService(),
+                        aiService: AIService()
+                    )
                 ))
             }
             .navigationDestination(isPresented: $viewModel.shouldRecordAudio) {
@@ -70,14 +72,17 @@ struct ConsultationListView: View {
                         audioService: AudioService(),
                         recordingService: RecordingService(),
                         consultationSerevice: ConsultationService()
-                    )),
+                    ),
                     onDismiss: {
-                        viewModel.shouldRecordAudio = false
                         viewModel.fetchConsultations()
-                    })
+                    }
+                ))
             }
         }
         .onAppear {
+            viewModel.fetchConsultations()
+        }
+        .refreshable {
             viewModel.fetchConsultations()
         }
     }

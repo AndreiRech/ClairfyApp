@@ -11,26 +11,33 @@ import AVFoundation
 
 @Observable
 class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
-    var recordingState: RecordingState = .idle
+    private let repository: VoiceRecordingRepositoryProtocol
+    private var timer: Timer?
+    private var newAudioFile: AudioFile?
+
+    var recordingState: RecordingState = .recording
     var audioSamples: [Float] = []
     var recordingTime: TimeInterval = 0
     var hasMicrophonePermission = false
     var currentAudioLevel: CGFloat = 0.0
-    var shouldDismiss = false
+    var shouldNavigate: Bool = false
+    var titleConsultation: String = ""
+    var showTooShortAlert: Bool = false
+    var showDeleteConfirmation: Bool = false
     
-    private let repository: VoiceRecordingRepositoryProtocol
-    private var timer: Timer?
+    var onDismiss: () -> Void
     
-    init(repository: VoiceRecordingRepositoryProtocol) {
+    init(repository: VoiceRecordingRepositoryProtocol, onDismiss: @escaping () -> Void) {
         self.repository = repository
+        self.onDismiss = onDismiss
+        
         checkMicrophonePermission()
+        startRecordingTapped()
     }
     
     func startRecordingTapped() {
-        guard hasMicrophonePermission else {
-            return
-        }
-        
+        guard hasMicrophonePermission else { return }
+
         repository.startRecording()
         recordingState = .recording
         startTimer()
@@ -49,18 +56,42 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     }
     
     func stopRecordingTapped() {
+        if recordingTime < 30 {
+            showTooShortAlert = true
+            return
+        }
+
         repository.finishRecording()
         recordingState = .idle
         stopTimer()
         saveRecording()
         resetRecording()
+        shouldNavigate = true
     }
     
     func deleteRecordingTapped() {
-        repository.finishRecording() 
+        showDeleteConfirmation = true
+    }
+
+    func confirmDeleteRecording() {
+        repository.finishRecording()
         recordingState = .idle
         stopTimer()
         resetRecording()
+        showDeleteConfirmation = false
+    }
+    
+    func createConsultation() {
+      
+        do {
+            guard let newAudioFile = newAudioFile else { return }
+            let consultation = Consultation(id: UUID(), title: titleConsultation, date: Date(), audio: newAudioFile, transcription: nil)
+            
+            try repository.createConsultation(with: consultation)
+        } catch {
+            print("Failed to save recording: \(error.localizedDescription)")
+        }
+        
     }
     
     private func startTimer() {
@@ -88,24 +119,11 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
             return
         }
         
-        // Cria o AudioFile com o caminho do arquivo gravado
-        let newAudioFile = AudioFile(audioPath: url.path)
-        
-        // Cria uma Consultation com título baseado na data e hora
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "dd/MM/yyyy HH:mm"
-        let title = "Consulta \(dateFormatter.string(from: Date()))"
-        
-        let newConsultation = Consultation(
-            title: title,
-            date: Date(),
-            audio: newAudioFile
-        )
-        
+        newAudioFile = AudioFile(audioPath: url.absoluteString)
         do {
-            try repository.createConsultation(with: newConsultation)
+            guard let newAudioFile = newAudioFile else { return }
+            try repository.createAudio(with: newAudioFile)
             print("Recording saved successfully!")
-            shouldDismiss = true
         } catch {
             print("Failed to save recording: \(error.localizedDescription)")
         }

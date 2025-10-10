@@ -19,7 +19,6 @@ final class Transcription: Identifiable {
     
     var consultation: Consultation?
 
-    
     init(id: UUID = UUID(), transcription: String? = nil, summary: String = "", didactic: String = "", keyWords: String = "", actionPoints: String = "") {
         self.id = id
         self.transcription = transcription

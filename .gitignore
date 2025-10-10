@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/swift,macos,swiftpackagemanager,swiftpm,xcode
-# Edit at https://www.toptal.com/developers/gitignore?templates=swift,macos,swiftpackagemanager,swiftpm,xcode
+# Created by https://www.toptal.com/developers/gitignore/api/swift,swiftpackagemanager,swiftpm,macos,xcode,xcodeinjection
+# Edit at https://www.toptal.com/developers/gitignore?templates=swift,swiftpackagemanager,swiftpm,macos,xcode,xcodeinjection
 
 ### macOS ###
 # General
@@ -124,10 +124,6 @@ xcuserdata
 *.xcodeproj
 
 
-*.xcuserdatad
-*.xcuserstate
-*.xcworkspace/xcuserdata/
-
 ### SwiftPM ###
 
 
@@ -144,4 +140,10 @@ xcuserdata
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
 
-# End of https://www.toptal.com/developers/gitignore/api/swift,macos,swiftpackagemanager,swiftpm,xcode
+### XcodeInjection ###
+# Code Injection
+# After new code Injection tools there's a generated folder /iOSInjectionProject
+# https://github.com/johnno1962/injectionforxcode
+
+
+# End of https://www.toptal.com/developers/gitignore/api/swift,swiftpackagemanager,swiftpm,macos,xcode,xcodeinjection

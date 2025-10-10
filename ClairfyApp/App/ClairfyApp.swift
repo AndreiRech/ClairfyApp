@@ -14,18 +14,14 @@ struct ClairfyApp: App {
     @State private var isSplashScreenActive = true
     
     init() {
-        // Configuração do Supabase/AIService
-        // A autenticação JWT foi removida no Supabase
-        // Enviamos apenas: apikey + x-device-id (sem Authorization)
-        SupabaseManager.shared.skipAuthorizationHeader = true
+        SupabaseService.shared.skipAuthorizationHeader = true
         
         // DESENVOLVIMENTO: Descomente para resetar o device ID e contornar limite de quota
         // SupabaseManager.shared.clearDeviceId()
-        // print("⚠️ Device ID resetado - novo ID será gerado")
+        // print("Device ID resetado - novo ID será gerado")
         
-        print("🚀 ClairfyApp iniciado")
-        print("🔧 skipAuthorizationHeader: \(SupabaseManager.shared.skipAuthorizationHeader)")
-        print("📱 Device ID: \(SupabaseManager.shared.getOrCreateDeviceId())")
+        print("skipAuthorizationHeader: \(SupabaseService.shared.skipAuthorizationHeader)")
+        print("Device ID: \(SupabaseService.shared.getOrCreateDeviceId())")
     }
     
     var body: some Scene {

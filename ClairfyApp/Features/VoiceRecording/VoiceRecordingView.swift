@@ -9,7 +9,7 @@ import SwiftUI
 
 struct VoiceRecordingView: View {
     @State var viewModel: VoiceRecordingViewModelProtocol
-    var onDismiss: (() -> Void)? = nil
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         VStack(spacing: 32) {
@@ -25,57 +25,75 @@ struct VoiceRecordingView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(Color(.label))
             
-            AudioWaveformView(samples: viewModel.audioSamples)
+            AudioForm(samples: viewModel.audioSamples)
                 .frame(height: 80)
             
-                HStack(alignment: .center, spacing: 20) {
-                    Button {
-                        viewModel.deleteRecordingTapped()
-                    } label: {
-                        Image(systemName: "trash.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 67, height: 67)
-                            .foregroundColor(Color(.label))
-                    }
-                    
-                    Button {
-                        switch viewModel.recordingState {
-                        case .idle:
-                            viewModel.startRecordingTapped()
-                        case .recording:
-                            viewModel.pauseRecordingTapped()
-                        case .paused:
-                            viewModel.resumeRecordingTapped()
-                        }
-                    } label: {
-                        Image(systemName: viewModel.recordingState == .recording ? "pause.circle.fill" : (viewModel.recordingState == .paused ? "play.circle.fill" : "mic.circle.fill"))
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 110, height: 110)
-                            .foregroundColor(Color(.clairBlue))
-                    }
-                    
-                    Button {
-                        viewModel.stopRecordingTapped()
-                    } label: {
-                        Image(systemName: "checkmark.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 67, height: 67)
-                            .foregroundColor(Color(.label))
-                    }
+            HStack(alignment: .center, spacing: 20) {
+                Button {
+                    viewModel.deleteRecordingTapped()
+                } label: {
+                    Image(systemName: "trash.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 67, height: 67)
+                        .foregroundColor(Color(.label))
                 }
+                
+                Button {
+                    switch viewModel.recordingState {
+                    case .idle:
+                        viewModel.startRecordingTapped()
+                    case .recording:
+                        viewModel.pauseRecordingTapped()
+                    case .paused:
+                        viewModel.resumeRecordingTapped()
+                    }
+                } label: {
+                    Image(systemName: viewModel.recordingState == .recording ? "pause.circle.fill" : (viewModel.recordingState == .paused ? "play.circle.fill" : "mic.circle.fill"))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 110, height: 110)
+                        .foregroundColor(Color(.clairBlue))
+                }
+                
+                Button {
+                    viewModel.stopRecordingTapped()
+                } label: {
+                    Image(systemName: "checkmark.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 67, height: 67)
+                        .foregroundColor(Color(.label))
+                }
+            }
             
             Spacer()
         }
         .background(Color(.secondarySystemBackground))
         .navigationTitle("Gravação de Áudio")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
-            if shouldDismiss {
-                onDismiss?()
+        .sheet(isPresented: $viewModel.shouldNavigate) {
+            RenameSheet(title: $viewModel.titleConsultation) {
+                viewModel.createConsultation()
+                viewModel.onDismiss()
+                dismiss()
             }
+        }
+        .alert("Cancelar gravação?", isPresented: $viewModel.showDeleteConfirmation) {
+            Button("Deletar", role: .destructive) {
+                viewModel.confirmDeleteRecording()
+            }
+            Button("Cancelar", role: .cancel) {
+            }
+        } message: {
+            Text("Você tem certeza que deseja excluir este audio?")
+        }
+        .alert("Audio muito curto", isPresented: $viewModel.showTooShortAlert) {
+            Button("OK") {
+                
+            }
+        } message: {
+            Text("O audio tem que ter pelo menos 30 segundos.")
         }
     }
 }
