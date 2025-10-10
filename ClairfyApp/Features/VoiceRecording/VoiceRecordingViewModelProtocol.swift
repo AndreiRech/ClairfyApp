@@ -15,6 +15,8 @@ protocol VoiceRecordingViewModelProtocol {
     var currentAudioLevel: CGFloat { get set }
     var shouldNavigate: Bool { get set }
     var titleConsultation: String { get set }
+    var showDeleteConfirmation: Bool { get set }
+    var showTooShortAlert: Bool { get set }
     
     func startRecordingTapped()
     func pauseRecordingTapped()

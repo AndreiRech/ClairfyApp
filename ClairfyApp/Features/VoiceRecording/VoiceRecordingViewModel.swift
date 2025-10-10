@@ -20,6 +20,9 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     var shouldNavigate: Bool = false
     var titleConsultation: String = ""
     private var newAudioFile: AudioFile?
+    var showTooShortAlert: Bool = false
+    var showDeleteConfirmation: Bool = false
+    
     
     private let repository: VoiceRecordingRepositoryProtocol
     private var timer: Timer?
