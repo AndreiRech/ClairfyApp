@@ -16,6 +16,9 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     var recordingTime: TimeInterval = 0
     var hasMicrophonePermission = false
     var currentAudioLevel: CGFloat = 0.0
+    var shouldNavigate: Bool = false
+    var titleConsultation: String = ""
+    private var newAudioFile: AudioFile?
     
     private let repository: VoiceRecordingRepositoryProtocol
     private var timer: Timer?
@@ -53,6 +56,7 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
         stopTimer()
         saveRecording()
         resetRecording()
+        shouldNavigate = true
     }
     
     func deleteRecordingTapped() {
@@ -60,6 +64,19 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
         recordingState = .idle
         stopTimer()
         resetRecording()
+    }
+    
+    func createConsultation() {
+      
+        do {
+            guard let newAudioFile = newAudioFile else { return }
+            let consultation = Consultation(id: UUID(), title: titleConsultation, date: Date(), audio: newAudioFile, transcription: nil)
+            
+            try repository.createConsultation(with: consultation)
+        } catch {
+            print("Failed to save recording: \(error.localizedDescription)")
+        }
+        
     }
     
     private func startTimer() {
@@ -87,8 +104,9 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
             return
         }
         
-        let newAudioFile = AudioFile(audioPath: url.absoluteString)
+        newAudioFile = AudioFile(audioPath: url.absoluteString)
         do {
+            guard let newAudioFile = newAudioFile else { return }
             try repository.createAudio(with: newAudioFile)
             print("Recording saved successfully!")
         } catch {

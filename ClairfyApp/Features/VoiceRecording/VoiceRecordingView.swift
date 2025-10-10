@@ -9,6 +9,7 @@ import SwiftUI
 
 struct VoiceRecordingView: View {
     @State var viewModel: VoiceRecordingViewModelProtocol
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         VStack(spacing: 32) {
@@ -71,5 +72,11 @@ struct VoiceRecordingView: View {
         .background(Color(.secondarySystemBackground))
         .navigationTitle("Gravação de Áudio")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $viewModel.shouldNavigate) {
+            RenameSheet(title: $viewModel.titleConsultation) {
+                viewModel.createConsultation()
+                dismiss()
+            }
+        }
     }
 }

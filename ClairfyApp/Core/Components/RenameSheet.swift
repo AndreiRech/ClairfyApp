@@ -10,13 +10,13 @@ import SwiftUI
 struct RenameSheet: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isTextFieldFocused: Bool
-    @State private var title: String = ""
+    @Binding var title: String   
+    var onSave: () -> Void
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 
-                // Campo de título
                 HStack(spacing: 8) {
                     Text("Título")
                         .font(.system(size: 17))
@@ -24,13 +24,14 @@ struct RenameSheet: View {
                     
                     TextField("Digite o título", text: $title)
                         .font(.system(size: 17))
+                        .foregroundColor(.primary)
                         .focused($isTextFieldFocused)
                         .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 44)
-                .background(Color.white)
+                .background(Color(.tertiarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 22))
                 .padding(.horizontal, 20)
                 .padding(.top, 32)
@@ -57,6 +58,7 @@ struct RenameSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         //ação do botão aqui
+                        onSave()
                         dismiss()
                     } label: {
                         Image(systemName: "checkmark")
@@ -74,6 +76,6 @@ struct RenameSheet: View {
     }
 }
 
-#Preview {
-    RenameSheet()
-}
+//#Preview {
+//    RenameSheet()
+//}
