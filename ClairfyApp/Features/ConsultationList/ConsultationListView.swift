@@ -13,7 +13,7 @@ struct ConsultationListView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                if viewModel.filteredConsultations.isEmpty {
+                if viewModel.consultations.isEmpty {
                     Spacer()
                     
                     EmptyState()
@@ -68,6 +68,9 @@ struct ConsultationListView: View {
             }
         }
         .onAppear {
+            viewModel.fetchConsultations()
+        }
+        .refreshable {
             viewModel.fetchConsultations()
         }
     }
