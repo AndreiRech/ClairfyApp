@@ -11,6 +11,9 @@ import AVFoundation
 
 @Observable
 class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
+    private let repository: VoiceRecordingRepositoryProtocol
+    private var timer: Timer?
+    private var newAudioFile: AudioFile?
 
     var recordingState: RecordingState = .recording
     var audioSamples: [Float] = []
@@ -19,13 +22,8 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     var currentAudioLevel: CGFloat = 0.0
     var shouldNavigate: Bool = false
     var titleConsultation: String = ""
-    private var newAudioFile: AudioFile?
     var showTooShortAlert: Bool = false
     var showDeleteConfirmation: Bool = false
-    
-    
-    private let repository: VoiceRecordingRepositoryProtocol
-    private var timer: Timer?
     
     init(repository: VoiceRecordingRepositoryProtocol) {
         self.repository = repository

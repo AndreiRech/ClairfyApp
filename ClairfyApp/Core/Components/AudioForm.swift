@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AudioWaveformView: View {
+struct AudioForm: View {
     let samples: [Float]
     let maxSamples = 85
 

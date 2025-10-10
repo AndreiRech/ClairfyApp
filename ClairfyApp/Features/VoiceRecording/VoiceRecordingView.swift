@@ -11,7 +11,6 @@ struct VoiceRecordingView: View {
     @State var viewModel: VoiceRecordingViewModelProtocol
     @Environment(\.dismiss) private var dismiss
     
-    
     var body: some View {
         VStack(spacing: 32) {
             Spacer()
@@ -26,7 +25,7 @@ struct VoiceRecordingView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(Color(.label))
             
-            AudioWaveformView(samples: viewModel.audioSamples)
+            AudioForm(samples: viewModel.audioSamples)
                 .frame(height: 80)
             
             HStack(alignment: .center, spacing: 20) {
@@ -80,20 +79,20 @@ struct VoiceRecordingView: View {
             }
         }
         .alert("Cancelar gravação?", isPresented: $viewModel.showDeleteConfirmation) {
-                    Button("Deletar", role: .destructive) {
-                        viewModel.confirmDeleteRecording()
-                    }
-                    Button("Cancelar", role: .cancel) {
-                    }
-                } message: {
-                    Text("Você tem certeza que deseja excluir este audio?")
-                }
-                .alert("Audio muito curto", isPresented: $viewModel.showTooShortAlert) {
-                    Button("OK") {
-
-                    }
-                } message: {
-                    Text("O audio tem que ter pelo menos 30 segundos.")
-                }
+            Button("Deletar", role: .destructive) {
+                viewModel.confirmDeleteRecording()
+            }
+            Button("Cancelar", role: .cancel) {
+            }
+        } message: {
+            Text("Você tem certeza que deseja excluir este audio?")
+        }
+        .alert("Audio muito curto", isPresented: $viewModel.showTooShortAlert) {
+            Button("OK") {
+                
+            }
+        } message: {
+            Text("O audio tem que ter pelo menos 30 segundos.")
+        }
     }
 }
