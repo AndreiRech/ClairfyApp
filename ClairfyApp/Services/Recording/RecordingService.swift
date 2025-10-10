@@ -41,7 +41,7 @@ class RecordingService: NSObject, RecordingServiceProtocol, AVAudioRecorderDeleg
         do {
             try recordingSession.setCategory(.playAndRecord,
                                              mode: .default,
-                                             options: [.allowBluetooth, .duckOthers])
+                                             options: [.duckOthers])
             try recordingSession.setActive(true)
         } catch {
             print("❌ Failed to set up recording session: \(error.localizedDescription)")

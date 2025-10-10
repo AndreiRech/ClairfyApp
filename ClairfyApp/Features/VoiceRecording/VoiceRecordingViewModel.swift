@@ -11,12 +11,15 @@ import AVFoundation
 
 @Observable
 class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
+
     var recordingState: RecordingState = .recording
     var audioSamples: [Float] = []
     var recordingTime: TimeInterval = 0
     var hasMicrophonePermission = false
     var currentAudioLevel: CGFloat = 0.0
-    
+    var showDeleteConfirmation = false
+    var showTooShortAlert = false
+
     private let repository: VoiceRecordingRepositoryProtocol
     private var timer: Timer?
     
@@ -27,10 +30,8 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     }
     
     func startRecordingTapped() {
-        guard hasMicrophonePermission else {
-            return
-        }
-        
+        guard hasMicrophonePermission else { return }
+
         repository.startRecording()
         recordingState = .recording
         startTimer()
@@ -49,6 +50,11 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     }
     
     func stopRecordingTapped() {
+        if recordingTime < 30 {
+            showTooShortAlert = true
+            return
+        }
+
         repository.finishRecording()
         recordingState = .idle
         stopTimer()
@@ -57,10 +63,15 @@ class VoiceRecordingViewModel: VoiceRecordingViewModelProtocol {
     }
     
     func deleteRecordingTapped() {
-        repository.finishRecording() 
+        showDeleteConfirmation = true
+    }
+
+    func confirmDeleteRecording() {
+        repository.finishRecording()
         recordingState = .idle
         stopTimer()
         resetRecording()
+        showDeleteConfirmation = false
     }
     
     private func startTimer() {
