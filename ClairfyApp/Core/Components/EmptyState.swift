@@ -26,5 +26,6 @@ struct EmptyState: View {
                 .foregroundStyle(Color(.label))
         }
         .frame(maxWidth: .infinity)
+        .padding(.horizontal)
     }
 }
