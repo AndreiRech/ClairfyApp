@@ -161,38 +161,38 @@ struct AnalysisView: View {
     
 }
 
-#if DEBUG
-private final class AnalysisViewModelPreview: AnalysisViewModelProtocol {
-    var consultation: Consultation
-    var isLoading: Bool = false
-    var selectedSegment: Int = 0
-    var errorMessage: String? = nil
-
-    init(consultation: Consultation) {
-        self.consultation = consultation
-    }
-
-    func generateAnalysis() async { }
-}
-
-#Preview("Com análise") {
-    let transcription = Transcription(
-        transcription: nil,
-        summary: "Paciente apresenta sintomas leves de rinite alérgica. Recomendada continuidade do tratamento atual e acompanhamento em 30 dias.",
-        didactic: "Você tem uma irritação no nariz causada por alergia. Continue usando o spray e volte em 1 mês para avaliarmos.",
-        keyWords: "rinite, alergia, acompanhamento",
-        actionPoints: "1. Usar spray nasal diariamente\n\n2. Evitar poeira e mofo\n\n3. Retornar em 30 dias"
-    )
-
-    let audio = AudioFile(audioPath: "/tmp/fake.m4a")
-
-    let consultation = Consultation(
-        title: "Consulta de Rotina",
-        date: Date(),
-        audio: audio,
-        transcription: transcription
-    )
-
-    return AnalysisView(viewModel: AnalysisViewModelPreview(consultation: consultation))
-}
-#endif
+//#if DEBUG
+//private final class AnalysisViewModelPreview: AnalysisViewModelProtocol {
+//    var consultation: Consultation
+//    var isLoading: Bool = false
+//    var selectedSegment: Int = 0
+//    var errorMessage: String? = nil
+//
+//    init(consultation: Consultation) {
+//        self.consultation = consultation
+//    }
+//
+//    func generateAnalysis() async { }
+//}
+//
+//#Preview("Com análise") {
+//    let transcription = Transcription(
+//        transcription: nil,
+//        summary: "Paciente apresenta sintomas leves de rinite alérgica. Recomendada continuidade do tratamento atual e acompanhamento em 30 dias.",
+//        didactic: "Você tem uma irritação no nariz causada por alergia. Continue usando o spray e volte em 1 mês para avaliarmos.",
+//        keyWords: "rinite, alergia, acompanhamento",
+//        actionPoints: "1. Usar spray nasal diariamente\n\n2. Evitar poeira e mofo\n\n3. Retornar em 30 dias"
+//    )
+//
+//    let audio = AudioFile(audioPath: "/tmp/fake.m4a")
+//
+//    let consultation = Consultation(
+//        title: "Consulta de Rotina",
+//        date: Date(),
+//        audio: audio,
+//        transcription: transcription
+//    )
+//
+//    return AnalysisView(viewModel: AnalysisViewModelPreview(consultation: consultation))
+//}
+//#endif
