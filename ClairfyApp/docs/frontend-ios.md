@@ -15,6 +15,7 @@
 | Onboarding | [`OnboardingView.swift`](../ClairfyApp/Features/Onboarding/OnboardingView.swift), [`OnboardingViewModel.swift`](../ClairfyApp/Features/Onboarding/OnboardingViewModel.swift) |
 | Lista de consultas | [`ConsultationListView.swift`](../ClairfyApp/Features/ConsultationList/ConsultationListView.swift), [`ConsultationListViewModel.swift`](../ClairfyApp/Features/ConsultationList/ConsultationListViewModel.swift) |
 | Gravação | [`VoiceRecordingView.swift`](../ClairfyApp/Features/VoiceRecording/VoiceRecordingView.swift), [`VoiceRecordingViewModel.swift`](../ClairfyApp/Features/VoiceRecording/VoiceRecordingViewModel.swift) |
+| Modelos IA locais (POC) | [`ModelManagementView.swift`](../Features/LocalModels/ModelManagementView.swift), [`LocalModelsViewModel.swift`](../Features/LocalModels/LocalModelsViewModel.swift) — entrada na toolbar de consultas; ver [poc-gemma-local.md](poc-gemma-local.md) |
 
 ## Fluxo de arranque (`ClairfyApp`)
 
@@ -31,6 +32,7 @@
 - Lista com `searchable` para filtrar por título.
 - `swipeActions` para eliminar.
 - Botão **REC** abre [`VoiceRecordingView`](../ClairfyApp/Features/VoiceRecording/VoiceRecordingView.swift) via `navigationDestination(isPresented:)`.
+- Toolbar **Modelos IA** (`NavigationLink`) abre a gestão de descarga Gemma E2B/E4B (POC).
 - **WIP:** toque num item define `selectedConsultation`, mas o destino de navegação está vazio (comentário “navegar para tela de visualizar consulta”).
 
 ## Gravação

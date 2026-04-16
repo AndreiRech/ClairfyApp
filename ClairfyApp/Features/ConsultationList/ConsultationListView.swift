@@ -57,6 +57,15 @@ struct ConsultationListView: View {
             }
             .background(Color(.secondarySystemBackground))
             .navigationTitle("Consultas")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ModelManagementView()
+                    } label: {
+                        Label("Modelos IA", systemImage: "arrow.down.circle.dotted")
+                    }
+                }
+            }
             .navigationDestination(item: $viewModel.selectedConsultation) { consultation in
                 // navegar para tela de visualizar consulta
             }

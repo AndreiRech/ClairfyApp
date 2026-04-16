@@ -21,17 +21,18 @@ Este diretório reúne ficheiros **modulares** para **desenvolvedores** e **agen
 | 6 | [liquid-glass.md](liquid-glass.md) | Modifier `.glassEffect()` e requisitos |
 | 7 | [seguranca-e-privacidade.md](seguranca-e-privacidade.md) | Dados, microfone, LGPD, checklists |
 | 8 | [app-store-connect.md](app-store-connect.md) | Distribuição, privacidade na loja, TestFlight |
+| POC | [poc-gemma-local.md](poc-gemma-local.md) | Gemma E2B/E4B local: URLs, spike llama.cpp/MediaPipe, limitações |
 
 ## Mapa do código (pastas principais)
 
 | Pasta | Descrição |
 |-------|-----------|
-| [`ClairfyApp/App/`](../ClairfyApp/App/) | Entrada do app, assets (cores, imagens) |
-| [`ClairfyApp/Features/`](../ClairfyApp/Features/) | Telas por funcionalidade (onboarding, lista, gravação, splash) |
-| [`ClairfyApp/Core/`](../ClairfyApp/Core/) | Componentes reutilizáveis e utilitários |
-| [`ClairfyApp/Models/`](../ClairfyApp/Models/) | Domínio, DTOs, modelos SwiftData |
-| [`ClairfyApp/Repositories/`](../ClairfyApp/Repositories/) | Camada entre ViewModels e serviços |
-| [`ClairfyApp/Services/`](../ClairfyApp/Services/) | Serviços (SwiftData, áudio, onboarding) |
+| [`App/`](../App/) | Entrada do app, assets (cores, imagens) |
+| [`Features/`](../Features/) | Telas (onboarding, lista, gravação, splash, **modelos locais**) |
+| [`Core/`](../Core/) | Componentes reutilizáveis e utilitários |
+| [`Models/`](../Models/) | Domínio, DTOs, modelos SwiftData |
+| [`Repositories/`](../Repositories/) | Camada entre ViewModels e serviços |
+| [`Services/`](../Services/) | Serviços (SwiftData, áudio, onboarding, **LocalAI**) |
 
 ## Glossário rápido
 
