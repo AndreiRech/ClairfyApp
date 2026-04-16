@@ -58,8 +58,9 @@ struct DownloadProgressSnapshot: Equatable, Sendable {
         formatter.allowedUnits = eta >= 3600 ? [.hour, .minute] : [.minute, .second]
         formatter.unitsStyle = .abbreviated
         formatter.zeroFormattingBehavior = .pad
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = locale
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        formatter.calendar = calendar
         if let s = formatter.string(from: eta) {
             return "Tempo restante estimado: ~\(s)"
         }
