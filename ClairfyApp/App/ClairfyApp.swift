@@ -7,12 +7,19 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct ClairfyApp: App {
+    @UIApplicationDelegateAdaptor(ClairfyAppDelegate.self) private var appDelegate
+
     @AppStorage("onboarding") var isOnboardingDone: Bool = false
     @State private var isSplashScreenActive = true
-    
+
+    init() {
+        ModelDownloadCoordinator.shared.ensureSessionWired()
+    }
+
     var body: some Scene {
         WindowGroup {
             if !isSplashScreenActive {

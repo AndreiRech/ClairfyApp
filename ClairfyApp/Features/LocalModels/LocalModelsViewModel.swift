@@ -8,13 +8,13 @@ import SwiftUI
 
 enum LocalModelInstallationDisplayPhase: Equatable {
     case notInstalled
-    case downloading(progress: Double)
+    case downloading(DownloadProgressSnapshot)
     case verifying
     case ready
     case failed(String)
 }
 
-struct LocalModelRowModel: Identifiable, Equatable {
+struct LocalModelRowModel: Identifiable {
     let id: LocalModelBundleID
     let displayName: String
     let expectedSizeDescription: String
@@ -36,6 +36,11 @@ final class LocalModelsViewModel {
     var lastTestActions: String?
     var bannerMessage: String?
 
+    /// Progresso em tempo real (também quando o ecrã não está visível).
+    private var liveProgressSnapshots: [LocalModelBundleID: DownloadProgressSnapshot] = [:]
+
+    private var notificationTokens: [NSObjectProtocol] = []
+
     init(
         catalog: [LocalModelDescriptor] = LocalModelCatalog.shared,
         downloadService: ModelDownloadServing = ModelDownloadService(),
@@ -49,10 +54,36 @@ final class LocalModelsViewModel {
         self.inferenceEngine = inferenceEngine
         self.recordingLocator = recordingLocator
         rebuildRowsFromDisk()
+
+        notificationTokens.append(
+            NotificationCenter.default.addObserver(forName: .localModelDownloadProgress, object: nil, queue: .main) { [weak self] note in
+                guard let self else { return }
+                self.handleDownloadProgress(note)
+            }
+        )
+        notificationTokens.append(
+            NotificationCenter.default.addObserver(forName: .localModelDownloadCompleted, object: nil, queue: .main) { [weak self] note in
+                guard let self else { return }
+                self.handleDownloadCompleted(note)
+            }
+        )
+    }
+
+    deinit {
+        notificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
     }
 
     func rebuildRowsFromDisk() {
         rows = catalog.map { desc in
+            if let snap = liveProgressSnapshots[desc.id] {
+                return LocalModelRowModel(
+                    id: desc.id,
+                    displayName: desc.displayName,
+                    expectedSizeDescription: ByteCountFormatter.string(fromByteCount: desc.expectedArtifactSizeBytes, countStyle: .file),
+                    phase: .downloading(snap)
+                )
+            }
+
             let url = LocalModelStorage.fileURL(for: desc.id)
             let phase: LocalModelInstallationDisplayPhase
             if FileManager.default.fileExists(atPath: url.path) {
@@ -79,6 +110,52 @@ final class LocalModelsViewModel {
         rows[idx].phase = phase
     }
 
+    private func handleDownloadProgress(_ note: Notification) {
+        guard let raw = note.userInfo?["modelId"] as? String,
+              let id = LocalModelBundleID(rawValue: raw),
+              let snap = note.userInfo?["snapshot"] as? DownloadProgressSnapshot else { return }
+        liveProgressSnapshots[id] = snap
+        updateRow(id: id, phase: .downloading(snap))
+    }
+
+    private func handleDownloadCompleted(_ note: Notification) {
+        guard let raw = note.userInfo?["modelId"] as? String,
+              let id = LocalModelBundleID(rawValue: raw),
+              let success = note.userInfo?["success"] as? Bool else { return }
+
+        let cancelled = (note.userInfo?["cancelled"] as? Bool) == true
+        liveProgressSnapshots[id] = nil
+
+        if cancelled {
+            rebuildRowsFromDisk()
+            bannerMessage = "Download cancelado."
+            return
+        }
+
+        guard let desc = LocalModelCatalog.descriptor(for: id) else {
+            rebuildRowsFromDisk()
+            return
+        }
+
+        let dest = LocalModelStorage.fileURL(for: id)
+
+        if success {
+            updateRow(id: id, phase: .verifying)
+            do {
+                try verificationService.verifyArtifact(at: dest, expectedSizeBytes: desc.expectedArtifactSizeBytes)
+                updateRow(id: id, phase: .ready)
+                bannerMessage = "\(desc.displayName) instalado. Pode usar o teste de inferência."
+            } catch {
+                updateRow(id: id, phase: .failed(error.localizedDescription))
+                bannerMessage = error.localizedDescription
+            }
+        } else {
+            let err = (note.userInfo?["errorDescription"] as? String) ?? "Download falhou."
+            updateRow(id: id, phase: .failed(err))
+            bannerMessage = err
+        }
+    }
+
     func startDownload(for id: LocalModelBundleID) {
         guard let desc = LocalModelCatalog.descriptor(for: id) else { return }
         let dest = LocalModelStorage.fileURL(for: id)
@@ -92,53 +169,31 @@ final class LocalModelsViewModel {
             }
         }
 
-        bannerMessage = nil
+        bannerMessage = "Download em segundo plano: pode bloquear o telemóvel ou sair deste ecrã. O progresso actualiza-se automaticamente."
         try? FileManager.default.removeItem(at: dest)
-        updateRow(id: id, phase: .downloading(progress: 0))
 
-        downloadService.download(
-            descriptor: desc,
-            destinationURL: dest,
-            onProgress: { [weak self] p in
-                Task { @MainActor in
-                    self?.updateRow(id: id, phase: .downloading(progress: p))
-                }
-            },
-            onComplete: { [weak self] result in
-                Task { @MainActor in
-                    guard let self else { return }
-                    switch result {
-                    case .success:
-                        self.updateRow(id: id, phase: .verifying)
-                        do {
-                            try self.verificationService.verifyArtifact(at: dest, expectedSizeBytes: desc.expectedArtifactSizeBytes)
-                            self.updateRow(id: id, phase: .ready)
-                            self.bannerMessage = "\(desc.displayName) instalado com sucesso."
-                        } catch {
-                            self.updateRow(id: id, phase: .failed(error.localizedDescription))
-                            self.bannerMessage = error.localizedDescription
-                        }
-                    case .failure(let error):
-                        let ns = error as NSError
-                        if ns.code == NSURLErrorCancelled {
-                            self.rebuildRowsFromDisk()
-                            self.bannerMessage = "Download cancelado."
-                            return
-                        }
-                        self.updateRow(id: id, phase: .failed(error.localizedDescription))
-                        self.bannerMessage = error.localizedDescription
-                    }
-                }
-            }
+        let initial = DownloadProgressSnapshot(
+            fractionComplete: 0,
+            bytesWritten: 0,
+            expectedTotalBytes: desc.expectedArtifactSizeBytes,
+            instantaneousBytesPerSecond: 0,
+            smoothedBytesPerSecond: 0,
+            estimatedSecondsRemaining: nil
         )
+        liveProgressSnapshots[id] = initial
+        updateRow(id: id, phase: .downloading(initial))
+
+        downloadService.startDownload(descriptor: desc, destinationURL: dest)
     }
 
     func cancelDownload(for id: LocalModelBundleID) {
+        liveProgressSnapshots[id] = nil
         downloadService.cancelDownload(for: id)
         rebuildRowsFromDisk()
     }
 
     func deleteModel(for id: LocalModelBundleID) {
+        liveProgressSnapshots[id] = nil
         downloadService.cancelDownload(for: id)
         let url = LocalModelStorage.fileURL(for: id)
         try? FileManager.default.removeItem(at: url)

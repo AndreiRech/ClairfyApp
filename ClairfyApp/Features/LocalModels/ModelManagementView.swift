@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ModelManagementView: View {
     @State private var viewModel = LocalModelsViewModel()
@@ -19,7 +20,7 @@ struct ModelManagementView: View {
             }
 
             Section {
-                Text("Os pesos são descarregados para Application Support / ClairfyModels. Podem exigir aceite de licença no Hugging Face e ligação Wi‑Fi estável.")
+                Text("Os pesos vão para Application Support / ClairfyModels. O download corre em segundo plano: pode sair deste ecrã ou bloquear o telemóvel; o estado actualiza-se ao voltar à app.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -38,49 +39,71 @@ struct ModelManagementView: View {
                             .foregroundStyle(.secondary)
 
                         switch row.phase {
-                        case .downloading(let p):
-                            ProgressView(value: p, total: 1.0)
-                                .progressViewStyle(.linear)
+                        case .downloading(let snap):
+                            VStack(alignment: .leading, spacing: 8) {
+                                ProgressView(value: snap.fractionComplete, total: 1.0)
+                                    .progressViewStyle(.linear)
+                                Text("\(snap.formattedDownloaded()) de \(snap.formattedTotal())")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.primary)
+                                HStack {
+                                    Label(snap.speedDescription(), systemImage: "arrow.down.circle")
+                                    Spacer()
+                                }
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                Text(snap.etaDescription())
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        case .verifying:
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .scaleEffect(0.85)
+                                Text("A verificar integridade do ficheiro…")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         default:
                             EmptyView()
                         }
 
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             switch row.phase {
                             case .notInstalled:
                                 Button("Descarregar") {
                                     viewModel.startDownload(for: row.id)
                                 }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(LocalModelPrimaryButtonStyle())
                             case .failed:
                                 Button("Descarregar de novo") {
                                     viewModel.startDownload(for: row.id)
                                 }
-                                .buttonStyle(.borderedProminent)
-                                Button("Eliminar", role: .destructive) {
+                                .buttonStyle(LocalModelPrimaryButtonStyle())
+                                Button("Eliminar") {
                                     viewModel.deleteModel(for: row.id)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(LocalModelSecondaryOutlineButtonStyle(isDestructive: true))
                             case .downloading:
                                 Button("Cancelar") {
                                     viewModel.cancelDownload(for: row.id)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(LocalModelSecondaryOutlineButtonStyle(isDestructive: false))
                             case .verifying:
                                 EmptyView()
                             case .ready:
                                 Button("Reverificar") {
                                     viewModel.verifyOnly(for: row.id)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(LocalModelSecondaryOutlineButtonStyle(isDestructive: false))
                                 Button("Testar inferência") {
                                     Task { await viewModel.runSmokeTest(for: row.id) }
                                 }
-                                .buttonStyle(.bordered)
-                                Button("Eliminar", role: .destructive) {
+                                .buttonStyle(LocalModelSecondaryOutlineButtonStyle(isDestructive: false))
+                                Button("Eliminar") {
                                     viewModel.deleteModel(for: row.id)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(LocalModelSecondaryOutlineButtonStyle(isDestructive: true))
                             }
                         }
                         .font(.subheadline)
@@ -105,6 +128,9 @@ struct ModelManagementView: View {
         .navigationTitle("Modelos locais")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable {
+            viewModel.rebuildRowsFromDisk()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             viewModel.rebuildRowsFromDisk()
         }
     }
@@ -133,5 +159,39 @@ struct ModelManagementView: View {
 #Preview {
     NavigationStack {
         ModelManagementView()
+    }
+}
+
+// MARK: - Estilos de botão (List + AccentColor legado corrigido no asset; estes garantem contraste)
+
+private struct LocalModelPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                Color(.clairBlue).opacity(configuration.isPressed ? 0.85 : 1.0),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+    }
+}
+
+private struct LocalModelSecondaryOutlineButtonStyle: ButtonStyle {
+    var isDestructive: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        let stroke = isDestructive ? Color.red : Color(.clairBlue)
+        let fg = isDestructive ? Color.red : Color(.clairBlue)
+        return configuration.label
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(fg)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(stroke.opacity(configuration.isPressed ? 0.5 : 1.0), lineWidth: 1.5)
+            )
     }
 }

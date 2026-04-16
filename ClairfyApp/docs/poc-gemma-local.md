@@ -24,7 +24,9 @@ Este documento descreve a prova de conceito na branch `poc/local-gemma-e2b-e4b`:
 
 Os tamanhos em bytes no catálogo devem coincidir com o **LFS** no Hugging Face; se o repo atualizar os ficheiros, **atualize** `expectedArtifactSizeBytes` em `LocalModelCatalog.swift`.
 
-**Gating / 403:** modelos Google podem exigir login e aceite de licença no Hugging Face. Se o download falhar com 403, use token (`Authorization: Bearer`) numa variante futura do `ModelDownloadService` ou hospede os GGUF num CDN próprio com licença clara.
+**Gating / 403:** modelos Google podem exigir login e aceite de licença no Hugging Face. O `ModelDownloadService` envia **User-Agent** tipo browser e usa `?download=1` na URL. Se ainda receber **HTTP 403**, HTML ou um **pointer LFS** (ficheiro pequeno com `git-lfs`), é preciso **token HF** (`Authorization: Bearer`) ou um mirror/CDN com o `.gguf` completo.
+
+**UI:** o `AccentColor` do projeto estava definido como `labelColor`, o que deixava botões do sistema (ex. `.borderedProminent`) ilegíveis. Foi alinhado à cor de marca **clairBlue**; o ecrã de modelos usa ainda estilos próprios com contraste garantido.
 
 ## Spike: motor nativo (áudio → resumo)
 
