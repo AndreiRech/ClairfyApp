@@ -8,6 +8,7 @@ import Foundation
 protocol ModelDownloadServing: AnyObject {
     func cancelDownload(for model: LocalModelBundleID)
     func startDownload(descriptor: LocalModelDescriptor, destinationURL: URL)
+    func startMmprojDownload(descriptor: LocalModelDescriptor, destinationURL: URL)
 }
 
 enum HuggingFaceDownloadError: LocalizedError {
@@ -35,5 +36,9 @@ final class ModelDownloadService: ModelDownloadServing {
 
     func startDownload(descriptor: LocalModelDescriptor, destinationURL: URL) {
         ModelDownloadCoordinator.shared.startDownload(descriptor: descriptor, destinationURL: destinationURL)
+    }
+
+    func startMmprojDownload(descriptor: LocalModelDescriptor, destinationURL: URL) {
+        ModelDownloadCoordinator.shared.startMmprojDownload(descriptor: descriptor, destinationURL: destinationURL)
     }
 }

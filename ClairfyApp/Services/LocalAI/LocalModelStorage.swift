@@ -21,6 +21,11 @@ enum LocalModelStorage {
         rootDirectory.appendingPathComponent(model.storedFileName, isDirectory: false)
     }
 
+    /// Ficheiro mmproj (multimodal) no mesmo directório que o GGUF principal.
+    static func mmprojURL(storedFileName: String) -> URL {
+        rootDirectory.appendingPathComponent(storedFileName, isDirectory: false)
+    }
+
     static func freeDiskBytes() -> Int64? {
         let values = try? rootDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         if let n = values?.volumeAvailableCapacityForImportantUsage {

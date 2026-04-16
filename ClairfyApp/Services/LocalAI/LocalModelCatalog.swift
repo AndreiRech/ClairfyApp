@@ -23,7 +23,15 @@ enum LocalModelCatalog: Sendable {
                 repoPath: "bartowski/google_gemma-4-E2B-it-GGUF",
                 fileName: "google_gemma-4-E2B-it-Q4_K_M.gguf"
             ),
-            expectedArtifactSizeBytes: 3_462_677_760
+            expectedArtifactSizeBytes: 3_462_677_760,
+            mmproj: MmprojArtifact(
+                downloadURL: hfDownloadURL(
+                    repoPath: "ggml-org/gemma-4-E2B-it-GGUF",
+                    fileName: "mmproj-gemma-4-E2B-it-Q8_0.gguf"
+                ),
+                expectedSizeBytes: 557_367_776,
+                storedFileName: "mmproj-gemma-4-E2B-it-Q8_0.gguf"
+            )
         ),
         LocalModelDescriptor(
             id: .e4b,
@@ -32,7 +40,15 @@ enum LocalModelCatalog: Sendable {
                 repoPath: "bartowski/google_gemma-4-E4B-it-GGUF",
                 fileName: "google_gemma-4-E4B-it-Q4_K_M.gguf"
             ),
-            expectedArtifactSizeBytes: 5_405_167_904
+            expectedArtifactSizeBytes: 5_405_167_904,
+            mmproj: MmprojArtifact(
+                downloadURL: hfDownloadURL(
+                    repoPath: "ggml-org/gemma-4-E4B-it-GGUF",
+                    fileName: "mmproj-gemma-4-E4B-it-Q8_0.gguf"
+                ),
+                expectedSizeBytes: 559_874_528,
+                storedFileName: "mmproj-gemma-4-E4B-it-Q8_0.gguf"
+            )
         )
     ]
 

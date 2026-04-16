@@ -12,6 +12,8 @@ struct LocalModelDescriptor: Identifiable, Sendable {
     let downloadURL: URL
     /// Tamanho esperado em bytes do artefacto GGUF (validação pós-download).
     let expectedArtifactSizeBytes: Int64
+    /// Projeção multimodal (áudio/imagem) — obrigatória para inferência com áudio directo no Gemma 4.
+    let mmproj: MmprojArtifact?
 
     var storedFileName: String { id.storedFileName }
 }

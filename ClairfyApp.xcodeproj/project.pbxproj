@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C9276B462F906F5E00CB7B2C /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 8E4D1A012E96E36A00CE058E /* LlamaSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		4DD762B52E96E36A00CE058E /* ClairfyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClairfyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C9276B462F906F5E00CB7B2C /* LlamaSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = ClairfyApp;
 			packageProductDependencies = (
+				8E4D1A012E96E36A00CE058E /* LlamaSwift */,
 			);
 			productName = ClairfyApp;
 			productReference = 4DD762B52E96E36A00CE058E /* ClairfyApp.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = 4DD762AC2E96E36A00CE058E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8E4D1A002E96E36A00CE058E /* XCRemoteSwiftPackageReference "llama" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4DD762B62E96E36A00CE058E /* Products */;
 			projectDirPath = "";
@@ -363,6 +372,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8E4D1A002E96E36A00CE058E /* XCRemoteSwiftPackageReference "llama" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/llama.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8808.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8E4D1A012E96E36A00CE058E /* LlamaSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8E4D1A002E96E36A00CE058E /* XCRemoteSwiftPackageReference "llama" */;
+			productName = LlamaSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4DD762AD2E96E36A00CE058E /* Project object */;
 }

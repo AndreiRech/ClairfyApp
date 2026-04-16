@@ -18,6 +18,7 @@ struct ClairfyApp: App {
 
     init() {
         ModelDownloadCoordinator.shared.ensureSessionWired()
+        ModelDownloadLiveActivityController.shared.beginObserving()
     }
 
     var body: some Scene {

@@ -20,7 +20,7 @@ struct ModelManagementView: View {
             }
 
             Section {
-                Text("Os pesos vão para Application Support / ClairfyModels. O download corre em segundo plano: pode sair deste ecrã ou bloquear o telemóvel; o estado actualiza-se ao voltar à app.")
+                Text("Os ficheiros (GGUF + mmproj para áudio no Gemma) vão para Application Support / ClairfyModels. O download corre em segundo plano; o estado actualiza-se ao voltar à app.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -41,6 +41,11 @@ struct ModelManagementView: View {
                         switch row.phase {
                         case .downloading(let snap):
                             VStack(alignment: .leading, spacing: 8) {
+                                if let phase = snap.phaseLabel {
+                                    Text(phase)
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(.secondary)
+                                }
                                 ProgressView(value: snap.fractionComplete, total: 1.0)
                                     .progressViewStyle(.linear)
                                 Text("\(snap.formattedDownloaded()) de \(snap.formattedTotal())")

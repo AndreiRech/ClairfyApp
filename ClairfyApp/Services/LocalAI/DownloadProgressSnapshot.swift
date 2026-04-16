@@ -7,6 +7,8 @@ import Foundation
 
 /// Estado de UI para um download activo (foreground ou background).
 struct DownloadProgressSnapshot: Equatable, Sendable {
+    /// Ex.: "Pesos GGUF" ou "mmproj (multimodal)" durante a segunda fase.
+    var phaseLabel: String?
     var fractionComplete: Double
     var bytesWritten: Int64
     /// Total esperado para a barra (Content-Length ou tamanho do catálogo).
@@ -68,7 +70,8 @@ struct DownloadProgressSnapshot: Equatable, Sendable {
     }
 
     static func == (lhs: DownloadProgressSnapshot, rhs: DownloadProgressSnapshot) -> Bool {
-        lhs.bytesWritten == rhs.bytesWritten
+        lhs.phaseLabel == rhs.phaseLabel
+            && lhs.bytesWritten == rhs.bytesWritten
             && abs(lhs.fractionComplete - rhs.fractionComplete) < 0.0001
             && abs(lhs.smoothedBytesPerSecond - rhs.smoothedBytesPerSecond) < 128
     }

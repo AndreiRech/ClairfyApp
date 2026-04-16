@@ -8,18 +8,26 @@
 import Foundation
 
 private final class PendingBox {
+    let taskKey: String
     let destinationURL: URL
     let modelId: LocalModelBundleID
+    let artifact: ModelDownloadArtifact
     let expectedArtifactSizeBytes: Int64
     var didDeliverCompletion = false
     var lastBytes: Int64 = 0
     var lastTick: Date?
     var smoothedBytesPerSecond: Double = 0
 
-    init(destinationURL: URL, modelId: LocalModelBundleID, expectedArtifactSizeBytes: Int64) {
+    init(taskKey: String, destinationURL: URL, modelId: LocalModelBundleID, artifact: ModelDownloadArtifact, expectedArtifactSizeBytes: Int64) {
+        self.taskKey = taskKey
         self.destinationURL = destinationURL
         self.modelId = modelId
+        self.artifact = artifact
         self.expectedArtifactSizeBytes = expectedArtifactSizeBytes
+    }
+
+    static func makeTaskKey(modelId: LocalModelBundleID, artifact: ModelDownloadArtifact) -> String {
+        "\(modelId.rawValue)-\(artifact.rawValue)"
     }
 }
 
@@ -45,12 +53,19 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
     }()
 
     private var pendingByTaskID: [Int: PendingBox] = [:]
-    private var taskByModel: [LocalModelBundleID: URLSessionDownloadTask] = [:]
+    private var taskByKey: [String: URLSessionDownloadTask] = [:]
 
     private override init() {
         let bundleId = Bundle.main.bundleIdentifier ?? "ClairfyApp"
         self.sessionIdentifier = bundleId + ".modelWeightsBackground"
         super.init()
+    }
+
+    private static func phaseLabel(for artifact: ModelDownloadArtifact) -> String {
+        switch artifact {
+        case .weights: return "Pesos GGUF"
+        case .mmproj: return "mmproj (multimodal)"
+        }
     }
 
     /// Garante que a sessão background fica registada (útil no arranque e após `handleEventsForBackgroundURLSession`).
@@ -67,17 +82,62 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
 
     func cancelDownload(for model: LocalModelBundleID) {
         stateLock.lock()
-        let task = taskByModel[model]
-        taskByModel[model] = nil
+        let prefix = model.rawValue + "-"
+        let keys = taskByKey.keys.filter { $0.hasPrefix(prefix) }
+        for k in keys {
+            taskByKey[k]?.cancel()
+            taskByKey[k] = nil
+        }
         stateLock.unlock()
-        task?.cancel()
     }
 
     func startDownload(descriptor: LocalModelDescriptor, destinationURL: URL) {
         cancelDownload(for: descriptor.id)
+        let key = PendingBox.makeTaskKey(modelId: descriptor.id, artifact: .weights)
         ensureSessionWired()
 
-        var request = URLRequest(url: descriptor.downloadURL)
+        startDownloadInternal(
+            taskKey: key,
+            sourceURL: descriptor.downloadURL,
+            destinationURL: destinationURL,
+            modelId: descriptor.id,
+            artifact: .weights,
+            expectedBytes: descriptor.expectedArtifactSizeBytes
+        )
+    }
+
+    func startMmprojDownload(descriptor: LocalModelDescriptor, destinationURL: URL) {
+        guard let mm = descriptor.mmproj else { return }
+        let key = PendingBox.makeTaskKey(modelId: descriptor.id, artifact: .mmproj)
+        cancelSingleTask(forKey: key)
+        ensureSessionWired()
+
+        startDownloadInternal(
+            taskKey: key,
+            sourceURL: mm.downloadURL,
+            destinationURL: destinationURL,
+            modelId: descriptor.id,
+            artifact: .mmproj,
+            expectedBytes: mm.expectedSizeBytes
+        )
+    }
+
+    private func cancelSingleTask(forKey key: String) {
+        stateLock.lock()
+        taskByKey[key]?.cancel()
+        taskByKey[key] = nil
+        stateLock.unlock()
+    }
+
+    private func startDownloadInternal(
+        taskKey: String,
+        sourceURL: URL,
+        destinationURL: URL,
+        modelId: LocalModelBundleID,
+        artifact: ModelDownloadArtifact,
+        expectedBytes: Int64
+    ) {
+        var request = URLRequest(url: sourceURL)
         request.httpMethod = "GET"
         request.setValue(
             "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
@@ -87,14 +147,16 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
 
         let task = session.downloadTask(with: request)
         let box = PendingBox(
+            taskKey: taskKey,
             destinationURL: destinationURL,
-            modelId: descriptor.id,
-            expectedArtifactSizeBytes: descriptor.expectedArtifactSizeBytes
+            modelId: modelId,
+            artifact: artifact,
+            expectedArtifactSizeBytes: expectedBytes
         )
 
         stateLock.lock()
         pendingByTaskID[task.taskIdentifier] = box
-        taskByModel[descriptor.id] = task
+        taskByKey[taskKey] = task
         stateLock.unlock()
 
         task.resume()
@@ -150,7 +212,9 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
         }
 
         let modelId = box.modelId
+        let artifact = box.artifact
         let snap = DownloadProgressSnapshot(
+            phaseLabel: Self.phaseLabel(for: artifact),
             fractionComplete: fraction,
             bytesWritten: totalBytesWritten,
             expectedTotalBytes: expectedTotal,
@@ -164,7 +228,11 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
             NotificationCenter.default.post(
                 name: .localModelDownloadProgress,
                 object: nil,
-                userInfo: ["modelId": modelId.rawValue, "snapshot": snap]
+                userInfo: [
+                    "modelId": modelId.rawValue,
+                    "snapshot": snap,
+                    "artifactKind": artifact.rawValue
+                ]
             )
         }
     }
@@ -177,13 +245,18 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
         }
 
         let modelId = box.modelId
+        let artifact = box.artifact
 
         func finishLockAndNotify(success: Bool, errorDescription: String?) {
             box.didDeliverCompletion = true
             stateLock.unlock()
             let mid = modelId.rawValue
             DispatchQueue.main.async {
-                var info: [String: Any] = ["modelId": mid, "success": success]
+                var info: [String: Any] = [
+                    "modelId": mid,
+                    "success": success,
+                    "artifactKind": artifact.rawValue
+                ]
                 if let errorDescription {
                     info["errorDescription"] = errorDescription
                 }
@@ -241,9 +314,10 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
         }
 
         let modelId = box.modelId
+        let taskKey = box.taskKey
         defer {
             pendingByTaskID.removeValue(forKey: downloadTask.taskIdentifier)
-            taskByModel[modelId] = nil
+            taskByKey.removeValue(forKey: taskKey)
             stateLock.unlock()
         }
 
@@ -260,6 +334,7 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
                                 "modelId": modelId.rawValue,
                                 "success": false,
                                 "cancelled": true,
+                                "artifactKind": box.artifact.rawValue,
                                 "errorDescription": ns.localizedDescription
                             ]
                         )
@@ -273,7 +348,12 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
                 NotificationCenter.default.post(
                     name: .localModelDownloadCompleted,
                     object: nil,
-                    userInfo: ["modelId": modelId.rawValue, "success": false, "errorDescription": error.localizedDescription]
+                    userInfo: [
+                        "modelId": modelId.rawValue,
+                        "success": false,
+                        "artifactKind": box.artifact.rawValue,
+                        "errorDescription": error.localizedDescription
+                    ]
                 )
             }
             return
@@ -290,6 +370,7 @@ final class ModelDownloadCoordinator: NSObject, URLSessionDownloadDelegate {
                     userInfo: [
                         "modelId": modelId.rawValue,
                         "success": false,
+                        "artifactKind": box.artifact.rawValue,
                         "errorDescription": HuggingFaceDownloadError.httpStatus(http.statusCode).localizedDescription
                     ]
                 )

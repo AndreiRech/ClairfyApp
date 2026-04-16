@@ -1,6 +1,6 @@
 # POC: Gemma 4 E2B / E4B local (iOS)
 
-Este documento descreve a prova de conceito na branch `poc/local-gemma-e2b-e4b`: descarga de pesos GGUF, verificação por tamanho, ecrã de estado e **inferência simulada** até o motor nativo ser integrado.
+Este documento descreve a prova de conceito na branch `poc/local-gemma-e2b-e4b`: descarga de **GGUF + mmproj** (multimodal), verificação por tamanho, **áudio → PCM** com AVFoundation (sem Speech da Apple), e teste de inferência no **dispositivo** via `LlamaCppNativeInferenceEngine` — a pilha **mtmd** ainda não está ligada ao binário iOS (ver [`gemma-audio-mtmd-ios.md`](gemma-audio-mtmd-ios.md)).
 
 ## Fonte no repositório
 
@@ -19,8 +19,9 @@ Este documento descreve a prova de conceito na branch `poc/local-gemma-e2b-e4b`:
 
 ## Pesos e Hugging Face
 
-- **E2B** (Q4_K_M): `bartowski/google_gemma-4-E2B-it-GGUF` — ficheiro `google_gemma-4-E2B-it-Q4_K_M.gguf` (~3,36 GB).
-- **E4B** (Q4_K_M): `bartowski/google_gemma-4-E4B-it-GGUF` — ficheiro `google_gemma-4-E4B-it-Q4_K_M.gguf` (~5,03 GB).
+- **E2B** (Q4_K_M): `bartowski/google_gemma-4-E2B-it-GGUF` — `google_gemma-4-E2B-it-Q4_K_M.gguf` (~3,36 GB).
+- **E4B** (Q4_K_M): `bartowski/google_gemma-4-E4B-it-GGUF` — `google_gemma-4-E4B-it-Q4_K_M.gguf` (~5,03 GB).
+- **mmproj** (Q8, áudio multimodal): `ggml-org/gemma-4-E2B-it-GGUF` / `gemma-4-E4B-it-GGUF` — `mmproj-gemma-4-*-it-Q8_0.gguf` (descarregado em segundo passo após o GGUF principal).
 
 Os tamanhos em bytes no catálogo devem coincidir com o **LFS** no Hugging Face; se o repo atualizar os ficheiros, **atualize** `expectedArtifactSizeBytes` em `LocalModelCatalog.swift`.
 
@@ -34,7 +35,7 @@ Os tamanhos em bytes no catálogo devem coincidir com o **LFS** no Hugging Face;
 
 **Alternativa:** **MediaPipe / Google AI Edge** com formato de tarefa otimizado para LLM em iOS (Metal), se a equipa preferir a linha oficial Google.
 
-**Estado actual do código:** `StubLocalInferenceEngine` devolve texto fixo para validar UX. `LlamaCppNativeInferenceEngine` existe como **placeholder** que falha com `LocalInferenceError.nativeEngineNotLinked` até existir bridge real.
+**Estado actual do código:** `StubLocalInferenceEngine` no **simulador**. No **dispositivo**, `LlamaCppNativeInferenceEngine` converte `.m4a` → PCM 16 kHz mono, verifica GGUF + mmproj; a chamada a **mtmd** (`mtmd_init_from_file`, chunks de áudio) **ainda não está no binário** — o erro `gemmaMultimodalInferenceNotLinkedInBuild` indica que falta empacotar **libmtmd** para iOS (o pacote LlamaSwift só traz `llama` base).
 
 ### Passos sugeridos no Xcode
 

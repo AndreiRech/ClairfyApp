@@ -42,11 +42,26 @@ final class LocalModelsViewModel {
     /// Limpeza dos observadores fora de `deinit` do ViewModel (não isolado ao MainActor).
     private let notificationObserverBag = NotificationObserverBag()
 
+    nonisolated private static func defaultInferenceEngine() -> LocalInferenceEngine {
+        #if targetEnvironment(simulator)
+        StubLocalInferenceEngine()
+        #else
+        LlamaCppNativeInferenceEngine()
+        #endif
+    }
+
+    private func rowExpectedSizeDescription(for desc: LocalModelDescriptor) -> String {
+        let w = ByteCountFormatter.string(fromByteCount: desc.expectedArtifactSizeBytes, countStyle: .file)
+        guard let mm = desc.mmproj else { return w }
+        let m = ByteCountFormatter.string(fromByteCount: mm.expectedSizeBytes, countStyle: .file)
+        return "\(w) + mmproj \(m)"
+    }
+
     init(
         catalog: [LocalModelDescriptor] = LocalModelCatalog.shared,
         downloadService: ModelDownloadServing = ModelDownloadService(),
         verificationService: ModelVerifying = ModelVerificationService(),
-        inferenceEngine: LocalInferenceEngine = StubLocalInferenceEngine(),
+        inferenceEngine: LocalInferenceEngine = LocalModelsViewModel.defaultInferenceEngine(),
         recordingLocator: LatestRecordingLocating = LatestRecordingLocator()
     ) {
         self.catalog = catalog
@@ -76,16 +91,23 @@ final class LocalModelsViewModel {
                 return LocalModelRowModel(
                     id: desc.id,
                     displayName: desc.displayName,
-                    expectedSizeDescription: ByteCountFormatter.string(fromByteCount: desc.expectedArtifactSizeBytes, countStyle: .file),
+                    expectedSizeDescription: rowExpectedSizeDescription(for: desc),
                     phase: .downloading(snap)
                 )
             }
 
-            let url = LocalModelStorage.fileURL(for: desc.id)
+            let weightsURL = LocalModelStorage.fileURL(for: desc.id)
+            let weightsExist = FileManager.default.fileExists(atPath: weightsURL.path)
+            let mmprojURL = desc.mmproj.map { LocalModelStorage.mmprojURL(storedFileName: $0.storedFileName) }
+            let mmprojExist = mmprojURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? true
+
             let phase: LocalModelInstallationDisplayPhase
-            if FileManager.default.fileExists(atPath: url.path) {
+            if weightsExist && mmprojExist {
                 do {
-                    try verificationService.verifyArtifact(at: url, expectedSizeBytes: desc.expectedArtifactSizeBytes)
+                    try verificationService.verifyArtifact(at: weightsURL, expectedSizeBytes: desc.expectedArtifactSizeBytes)
+                    if let mm = desc.mmproj, let u = mmprojURL {
+                        try verificationService.verifyArtifact(at: u, expectedSizeBytes: mm.expectedSizeBytes)
+                    }
                     phase = .ready
                 } catch {
                     phase = .failed(error.localizedDescription)
@@ -96,7 +118,7 @@ final class LocalModelsViewModel {
             return LocalModelRowModel(
                 id: desc.id,
                 displayName: desc.displayName,
-                expectedSizeDescription: ByteCountFormatter.string(fromByteCount: desc.expectedArtifactSizeBytes, countStyle: .file),
+                expectedSizeDescription: rowExpectedSizeDescription(for: desc),
                 phase: phase
             )
         }
@@ -135,13 +157,47 @@ final class LocalModelsViewModel {
         }
 
         let dest = LocalModelStorage.fileURL(for: id)
+        let artifactKind = note.userInfo?["artifactKind"] as? String
 
         if success {
             updateRow(id: id, phase: .verifying)
             do {
-                try verificationService.verifyArtifact(at: dest, expectedSizeBytes: desc.expectedArtifactSizeBytes)
-                updateRow(id: id, phase: .ready)
-                bannerMessage = "\(desc.displayName) instalado. Pode usar o teste de inferência."
+                if artifactKind == ModelDownloadArtifact.mmproj.rawValue {
+                    guard let mm = desc.mmproj else {
+                        updateRow(id: id, phase: .failed("Metadados mmproj em falta."))
+                        bannerMessage = "Estado de download inconsistente."
+                        return
+                    }
+                    let mmURL = LocalModelStorage.mmprojURL(storedFileName: mm.storedFileName)
+                    try verificationService.verifyArtifact(at: mmURL, expectedSizeBytes: mm.expectedSizeBytes)
+                    try verificationService.verifyArtifact(at: dest, expectedSizeBytes: desc.expectedArtifactSizeBytes)
+                    updateRow(id: id, phase: .ready)
+                    bannerMessage = "\(desc.displayName) instalado (GGUF + mmproj). Pode testar inferência com áudio."
+                } else {
+                    try verificationService.verifyArtifact(at: dest, expectedSizeBytes: desc.expectedArtifactSizeBytes)
+                    if let mm = desc.mmproj {
+                        let mmURL = LocalModelStorage.mmprojURL(storedFileName: mm.storedFileName)
+                        if !FileManager.default.fileExists(atPath: mmURL.path) {
+                            let initial = DownloadProgressSnapshot(
+                                phaseLabel: "mmproj (multimodal)",
+                                fractionComplete: 0,
+                                bytesWritten: 0,
+                                expectedTotalBytes: mm.expectedSizeBytes,
+                                instantaneousBytesPerSecond: 0,
+                                smoothedBytesPerSecond: 0,
+                                estimatedSecondsRemaining: nil
+                            )
+                            liveProgressSnapshots[id] = initial
+                            updateRow(id: id, phase: .downloading(initial))
+                            downloadService.startMmprojDownload(descriptor: desc, destinationURL: mmURL)
+                            bannerMessage = "Pesos prontos. A descarregar mmproj para áudio directo no Gemma…"
+                            return
+                        }
+                        try verificationService.verifyArtifact(at: mmURL, expectedSizeBytes: mm.expectedSizeBytes)
+                    }
+                    updateRow(id: id, phase: .ready)
+                    bannerMessage = "\(desc.displayName) instalado. Pode usar o teste de inferência."
+                }
             } catch {
                 updateRow(id: id, phase: .failed(error.localizedDescription))
                 bannerMessage = error.localizedDescription
@@ -156,20 +212,26 @@ final class LocalModelsViewModel {
     func startDownload(for id: LocalModelBundleID) {
         guard let desc = LocalModelCatalog.descriptor(for: id) else { return }
         let dest = LocalModelStorage.fileURL(for: id)
+        let totalNeeded = desc.expectedArtifactSizeBytes + (desc.mmproj?.expectedSizeBytes ?? 0)
 
         if let free = LocalModelStorage.freeDiskBytes() {
             let headroom: Int64 = 512 * 1_024 * 1_024
-            if free < desc.expectedArtifactSizeBytes + headroom {
-                bannerMessage = "Espaço insuficiente. Livre aprox. \(ByteCountFormatter.string(fromByteCount: desc.expectedArtifactSizeBytes + headroom, countStyle: .memory))."
+            if free < totalNeeded + headroom {
+                bannerMessage = "Espaço insuficiente. Livre aprox. \(ByteCountFormatter.string(fromByteCount: totalNeeded + headroom, countStyle: .memory))."
                 updateRow(id: id, phase: .failed("Espaço insuficiente"))
                 return
             }
         }
 
+        downloadService.cancelDownload(for: id)
         bannerMessage = "Download em segundo plano: pode bloquear o telemóvel ou sair deste ecrã. O progresso actualiza-se automaticamente."
         try? FileManager.default.removeItem(at: dest)
+        if let mm = desc.mmproj {
+            try? FileManager.default.removeItem(at: LocalModelStorage.mmprojURL(storedFileName: mm.storedFileName))
+        }
 
         let initial = DownloadProgressSnapshot(
+            phaseLabel: "Pesos GGUF",
             fractionComplete: 0,
             bytesWritten: 0,
             expectedTotalBytes: desc.expectedArtifactSizeBytes,
@@ -194,6 +256,9 @@ final class LocalModelsViewModel {
         downloadService.cancelDownload(for: id)
         let url = LocalModelStorage.fileURL(for: id)
         try? FileManager.default.removeItem(at: url)
+        if let mm = LocalModelCatalog.descriptor(for: id)?.mmproj {
+            try? FileManager.default.removeItem(at: LocalModelStorage.mmprojURL(storedFileName: mm.storedFileName))
+        }
         lastTestSummary = nil
         lastTestActions = nil
         rebuildRowsFromDisk()
@@ -206,6 +271,10 @@ final class LocalModelsViewModel {
         updateRow(id: id, phase: .verifying)
         do {
             try verificationService.verifyArtifact(at: url, expectedSizeBytes: desc.expectedArtifactSizeBytes)
+            if let mm = desc.mmproj {
+                let mmURL = LocalModelStorage.mmprojURL(storedFileName: mm.storedFileName)
+                try verificationService.verifyArtifact(at: mmURL, expectedSizeBytes: mm.expectedSizeBytes)
+            }
             updateRow(id: id, phase: .ready)
             bannerMessage = "Verificação OK."
         } catch {
@@ -221,8 +290,12 @@ final class LocalModelsViewModel {
         let weightsURL = LocalModelStorage.fileURL(for: id)
         do {
             try verificationService.verifyArtifact(at: weightsURL, expectedSizeBytes: desc.expectedArtifactSizeBytes)
+            if let mm = desc.mmproj {
+                let mmURL = LocalModelStorage.mmprojURL(storedFileName: mm.storedFileName)
+                try verificationService.verifyArtifact(at: mmURL, expectedSizeBytes: mm.expectedSizeBytes)
+            }
         } catch {
-            bannerMessage = "Instale ou verifique o modelo antes do teste."
+            bannerMessage = "Instale ou verifique o modelo (GGUF + mmproj) antes do teste."
             updateRow(id: id, phase: .failed(error.localizedDescription))
             return
         }
