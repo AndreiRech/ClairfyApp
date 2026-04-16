@@ -39,7 +39,8 @@ final class LocalModelsViewModel {
     /// Progresso em tempo real (também quando o ecrã não está visível).
     private var liveProgressSnapshots: [LocalModelBundleID: DownloadProgressSnapshot] = [:]
 
-    private var notificationTokens: [NSObjectProtocol] = []
+    /// Limpeza dos observadores fora de `deinit` do ViewModel (não isolado ao MainActor).
+    private let notificationObserverBag = NotificationObserverBag()
 
     init(
         catalog: [LocalModelDescriptor] = LocalModelCatalog.shared,
@@ -55,22 +56,18 @@ final class LocalModelsViewModel {
         self.recordingLocator = recordingLocator
         rebuildRowsFromDisk()
 
-        notificationTokens.append(
+        notificationObserverBag.insert(
             NotificationCenter.default.addObserver(forName: .localModelDownloadProgress, object: nil, queue: .main) { [weak self] note in
                 guard let self else { return }
                 self.handleDownloadProgress(note)
             }
         )
-        notificationTokens.append(
+        notificationObserverBag.insert(
             NotificationCenter.default.addObserver(forName: .localModelDownloadCompleted, object: nil, queue: .main) { [weak self] note in
                 guard let self else { return }
                 self.handleDownloadCompleted(note)
             }
         )
-    }
-
-    deinit {
-        notificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
     }
 
     func rebuildRowsFromDisk() {
@@ -249,5 +246,27 @@ final class LocalModelsViewModel {
             bannerMessage = error.localizedDescription
             updateRow(id: id, phase: .failed(error.localizedDescription))
         }
+    }
+}
+
+// MARK: - Observadores NotificationCenter
+
+/// Guarda tokens de `addObserver` e remove-os no `deinit`, sem aceder a propriedades isoladas ao MainActor.
+private final class NotificationObserverBag: @unchecked Sendable {
+    private var tokens: [NSObjectProtocol] = []
+    private let lock = NSLock()
+
+    func insert(_ token: NSObjectProtocol) {
+        lock.lock()
+        tokens.append(token)
+        lock.unlock()
+    }
+
+    deinit {
+        lock.lock()
+        let copy = tokens
+        tokens = []
+        lock.unlock()
+        copy.forEach { NotificationCenter.default.removeObserver($0) }
     }
 }
